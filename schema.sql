@@ -1,4 +1,4 @@
-create if not exists table entries (
+create table if not exists entries (
 	id integer primary key autoincrement,
 	userid integer not null,
 	timestamp date not null,
