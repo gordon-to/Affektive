@@ -59,21 +59,22 @@ def insert_data():
 			timestamp = request_json['timestamp']
 			gsr = request_json['gsr']
 			hr = request_json['hr']
-			return process_insert(username, timestamp, gsr, hr)
+			state = request_json['state']
+			return process_insert(username, timestamp, gsr, hr, state)
 		return jsonify(error="failed authentication")
 	return jsonify(error="invalid request type")
 
-def process_insert(username, timestamp, gsr, hr):
+def process_insert(username, timestamp, gsr, hr, state):
 	start_db_request()
-	cur = g.db.execute('insert into entries (userid, timestamp, hr, gsr) values (?, ?, ?, ?)', [username, timestamp, int(hr), int(gsr)])
+	cur = g.db.execute('insert into entries (userid, timestamp, hr, gsr, state, level) values (?, ?, ?, ?, ?, 0)', [username, timestamp, int(hr), int(gsr), state])
 	g.db.commit()
 	end_db_request()
-	return jsonify(username=username, timestamp=timestamp, hr=hr, gsr=gsr)
+	return jsonify(username=username, timestamp=timestamp, hr=hr, gsr=gsr, state=state)
 
 def process_get(userid):
 	start_db_request()
-	cur = g.db.execute('select userid, timestamp, hr, gsr from entries where userid=?', (userid,))
-	entries = [dict(user_id=row[0], timestamp=row[1], hr=row[2], gsr=row[3])for row in cur.fetchall()]
+	cur = g.db.execute('select userid, timestamp, hr, gsr, state, level from entries where userid=?', (userid,))
+	entries = [dict(user_id=row[0], timestamp=row[1], hr=row[2], gsr=row[3], state=row[4], level=row[5])for row in cur.fetchall()]
 	end_db_request()
 	return json.dumps([dict(item) for item in entries])
 
