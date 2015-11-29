@@ -72,7 +72,6 @@ def process_insert(username, timestamp, gsr, hr):
 
 def process_get(userid):
 	start_db_request()
-	result = ""
 	cur = g.db.execute('select userid, timestamp, hr, gsr from entries where userid=?', (userid,))
 	entries = [dict(user_id=row[0], timestamp=row[1], hr=row[2], gsr=row[3])for row in cur.fetchall()]
 	end_db_request()
