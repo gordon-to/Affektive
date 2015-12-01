@@ -68,7 +68,7 @@ def insert_data():
 
 def process_insert(username, timestamp, gsr, hr, state):
 	start_db_request()
-	cur = g.db.execute('insert into entries (userid, timestamp, hr, gsr, state, level) values (?, ?, ?, ?, ?, 0)', [username, timestamp, int(hr), int(gsr), state])
+	cur = g.db.execute('insert into entries (userid, timestamp, hr, gsr, state, level) values (?, ?, ?, ?, ?, 0)', [username, timestamp, int(hr), float(gsr), state])
 	g.db.commit()
 	end_db_request()
 

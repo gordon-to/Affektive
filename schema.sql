@@ -3,7 +3,7 @@ create table if not exists entries (
 	userid integer not null,
 	timestamp date not null,
 	hr integer not null,
-	gsr integer not null,
+	gsr real not null,
 	state text not null,
 	level integer not null
 );
