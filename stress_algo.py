@@ -4,12 +4,9 @@ from flask import Flask, request, jsonify, session, g, redirect, url_for, abort,
 from contextlib import closing
 import validation
 
-<<<<<<< HEAD
-=======
 # Import Pickle
 import pickle
 
->>>>>>> 9adc4cc8fa46988c6b5c575a6079309cc5fc2918
 # ML Imports
 import pandas as pd
 from pandas import Series,DataFrame
@@ -19,21 +16,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-<<<<<<< HEAD
-from sklearn.svm import SVC
-=======
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cross_validation import train_test_split
 from sklearn import preprocessing
->>>>>>> 9adc4cc8fa46988c6b5c575a6079309cc5fc2918
 
 import seaborn as sns
 
-
-<<<<<<< HEAD
-=======
-
->>>>>>> 9adc4cc8fa46988c6b5c575a6079309cc5fc2918
 # configuration
 DATABASE = 'affektive.db'
 DEBUG = True
@@ -67,13 +55,6 @@ def process_data(userid):
 	with app.app_context():
 		start_db_request()
 		cur = g.db.execute('select userid, timestamp, hr, gsr, state, level from entries where userid=?', (userid,))
-<<<<<<< HEAD
-		#print cur.fetchall()[0]
-		#print type(cur.fetchall()[0])
-		#data = np.asarray(cur.fetchall())
-		df = pd.DataFrame(cur.fetchall())
-		df.columns = ['userid','time','hr','gsr','state','level']
-=======
 
 		# Preprocessing Data
                 df = pd.DataFrame(cur.fetchall())
@@ -81,7 +62,6 @@ def process_data(userid):
                 df.to_pickle('training_set.pkl') # Save local copy of DataFrame
 
                 # Data Visualizations
->>>>>>> 9adc4cc8fa46988c6b5c575a6079309cc5fc2918
 		normal = df[df['state'] == 'Normal']
 		calm = df[df['state'] == 'Calm']
 		stressed = df[df['state'] == 'Stressed']
@@ -95,9 +75,6 @@ def process_data(userid):
 
 		plt.savefig('output.png')
 
-<<<<<<< HEAD
-		end_db_request()
-=======
                 # Convert to Numpy Format
                 le = preprocessing.LabelEncoder()
                 le.fit(df['state'])
@@ -123,8 +100,8 @@ def process_data(userid):
                 # Classify unseen data into one of the states and quantify level
 
 
+
                 end_db_request()
->>>>>>> 9adc4cc8fa46988c6b5c575a6079309cc5fc2918
 		return
 
 if __name__ == "__main__":
