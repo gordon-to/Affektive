@@ -37,30 +37,32 @@ def end_db_request():
 def main():
 	return "Hello World!"
 
-@app.route('/get/<user_id>', methods=['GET'])
-def get_data(user_id):
-	if request.method == 'GET':
-		return process_get(user_id);
-		#errors = validation.check_get_request(request_json.keys())
-		#if errors:
-	#		return errors
+@app.route('/retrieve', methods=['POST'])
+def get_data():
+	if request.method == 'POST':
+		request_json = request.get_json(force=True)
+		errors = validation.errors_login_params(request_json.keys())
+		if errors:
+			return errors
+		return process_get(request_json['username'])
 	return jsonify(error="invalid request type")
 
 @app.route('/insert', methods=['POST'])
 def insert_data():
 	if request.method == 'POST':
 		request_json = request.get_json(force=True)
-		errors = validation.check_insert_request(request_json.keys())
+		errors = validation.errors_insert_params(request_json.keys())
 		if errors:
 			return errors  
 		username = request_json['username']
 		password = request_json['password']
 		if validation.login_check(username, password):
-			timestamp = request_json['timestamp']
-			gsr = request_json['gsr']
-			hr = request_json['hr']
-			state = request_json['state']
-			return process_insert(username, timestamp, gsr, hr, state)
+			for entry in request_json['data']:
+				errors = validation.errors_insert_data_params(entry)
+				if errors:
+					return errors
+				process_insert(username, entry['timestamp'], entry['gsr'], entry['hr'], entry['state'])
+			return jsonify(success=str(len(request_json['data'])) + " entries inserted.")
 		return jsonify(error="failed authentication")
 	return jsonify(error="invalid request type")
 
@@ -69,12 +71,11 @@ def process_insert(username, timestamp, gsr, hr, state):
 	cur = g.db.execute('insert into entries (userid, timestamp, hr, gsr, state, level) values (?, ?, ?, ?, ?, 0)', [username, timestamp, int(hr), int(gsr), state])
 	g.db.commit()
 	end_db_request()
-	return jsonify(username=username, timestamp=timestamp, hr=hr, gsr=gsr, state=state)
 
 def process_get(userid):
 	start_db_request()
 	cur = g.db.execute('select userid, timestamp, hr, gsr, state, level from entries where userid=?', (userid,))
-	entries = [dict(user_id=row[0], timestamp=row[1], hr=row[2], gsr=row[3], state=row[4], level=row[5])for row in cur.fetchall()]
+	entries = [dict(username=row[0], timestamp=row[1], hr=row[2], gsr=row[3], state=row[4], level=row[5])for row in cur.fetchall()]
 	end_db_request()
 	return json.dumps([dict(item) for item in entries])
 
