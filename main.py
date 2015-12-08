@@ -63,6 +63,8 @@ def measruements_batch():
 			 	float(entry['gsr']),
 				entry['state'],
 				float(entry['level']))
+			db.session.add(entry)
+		db.session.commit()
 		return jsonify(success=str(len(json['measurements'])) + " entries inserted.")
 	except Exception, e:
 
