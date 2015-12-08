@@ -2,7 +2,7 @@ import sqlite3
 from datetime import datetime
 import flask.ext.restless
 from flask import Flask, request, jsonify, session, g, redirect, url_for, abort, render_template, flash
-from flask_sqlalchemy import SQLAlchemy
+from models import db, Measurement
 from contextlib import closing
 import validation
 
@@ -14,40 +14,26 @@ USERNAME = 'admin'
 PASSWORD = 'default'
 
 
+def create_app():
+	app = Flask(__name__)
+	app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stress.db'
+	app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+	db.init_app(app)
+	with app.app_context():
+		db.create_all()
+	return app
 
-#create app
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stress.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-
-class Measurement(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	userid = db.Column(db.Integer)
-	timestamp = db.Column(db.DateTime)
-	hr = db.Column(db.Integer)
-	gsr = db.Column(db.Float)
-	state = db.Column(db.String(80))
-	level = db.Column(db.Float)
-
-	def __init__(self, userid, timestamp, hr, gsr, state, level):
-		self.userid = userid
-		self.timestamp = timestamp
-		self.hr = hr
-		self.gsr = gsr
-		self.state = state
-		self.level = level
-		
-
-	def __repr__(self):
-		return '<Measurement state:{0}, hr:{1}, gsr:{2} '.format(self.state, self.hr, self.gsr)
-
-db.create_all()
+app = create_app()
 
 # Create API endpoints, which will be available at /api/<tablename> by
 # default. Allowed HTTP methods can be specified as well.
-manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
-manager.create_api(Measurement, methods=['GET', 'POST', 'DELETE'])
+def create_api(app):
+	with app.app_context():
+		manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
+		manager.create_api(Measurement, methods=['GET', 'POST', 'DELETE'])
+create_api(app)
+
+
 
 @app.route('/measurements_batch', methods=['POST'])
 def measruements_batch():
