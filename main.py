@@ -1,6 +1,8 @@
 import sqlite3
-import json
+from datetime import datetime
+import flask.ext.restless
 from flask import Flask, request, jsonify, session, g, redirect, url_for, abort, render_template, flash
+from flask_sqlalchemy import SQLAlchemy
 from contextlib import closing
 import validation
 
@@ -11,75 +13,68 @@ SECRET_KEY = 'development key'
 USERNAME = 'admin'
 PASSWORD = 'default'
 
+
+
 #create app
 app = Flask(__name__)
-app.config.from_object(__name__)
-app.config.from_envvar('APP_SETTINGS', silent=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///stress.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-def connect_db():
-	return sqlite3.connect(app.config['DATABASE'])
+class Measurement(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	userid = db.Column(db.Integer)
+	timestamp = db.Column(db.DateTime)
+	hr = db.Column(db.Integer)
+	gsr = db.Column(db.Float)
+	state = db.Column(db.String(80))
+	level = db.Column(db.Float)
 
-def init_db():
-	with closing(connect_db()) as db:
-		with app.open_resource('schema.sql', mode='r') as f:
-			db.cursor().executescript(f.read())
-		db.commit()
+	def __init__(self, userid, timestamp, hr, gsr, state, level):
+		self.userid = userid
+		self.timestamp = timestamp
+		self.hr = hr
+		self.gsr = gsr
+		self.state = state
+		self.level = level
+		
 
-def start_db_request():
-	g.db = connect_db()
+	def __repr__(self):
+		return '<Measurement state:{0}, hr:{1}, gsr:{2} '.format(self.state, self.hr, self.gsr)
 
-def end_db_request():
-	db = getattr(g, 'db', None)
-	if db is not None:
-		db.close()
+db.create_all()
+
+# Create API endpoints, which will be available at /api/<tablename> by
+# default. Allowed HTTP methods can be specified as well.
+manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
+manager.create_api(Measurement, methods=['GET', 'POST', 'DELETE'])
+
+@app.route('/measurements_batch', methods=['POST'])
+def measruements_batch():
+	try:
+		json = request.get_json()
+		userid = json['username']
+		for entry in json['measurements']:
+			print entry
+			measurement = Measurement(
+			 	int(userid), 
+			 	datetime.fromtimestamp(entry['timestamp']),
+			 	int(entry['hr']),
+			 	float(entry['gsr']),
+				entry['state'],
+				float(entry['level']))
+		return jsonify(success=str(len(json['measurements'])) + " entries inserted.")
+	except Exception, e:
+
+		return jsonify(error=str(e), )
+
+
+
 
 @app.route('/')
 def main():
 	return "Hello World!"
 
-@app.route('/retrieve', methods=['POST'])
-def get_data():
-	if request.method == 'POST':
-		request_json = request.get_json(force=True)
-		errors = validation.errors_login_params(request_json.keys())
-		if errors:
-			return errors
-		return process_get(request_json['username'])
-	return jsonify(error="invalid request type")
-
-@app.route('/insert', methods=['POST'])
-def insert_data():
-	if request.method == 'POST':
-		request_json = request.get_json(force=True)
-		errors = validation.errors_insert_params(request_json.keys())
-		if errors:
-			return errors  
-		username = request_json['username']
-		password = request_json['password']
-		if validation.login_check(username, password):
-			for entry in request_json['data']:
-				errors = validation.errors_insert_data_params(entry)
-				if errors:
-					return errors
-				process_insert(username, entry['timestamp'], entry['gsr'], entry['hr'], entry['state'])
-			return jsonify(success=str(len(request_json['data'])) + " entries inserted.")
-		return jsonify(error="failed authentication")
-	return jsonify(error="invalid request type")
-
-def process_insert(username, timestamp, gsr, hr, state):
-	start_db_request()
-	cur = g.db.execute('insert into entries (userid, timestamp, hr, gsr, state, level) values (?, ?, ?, ?, ?, 0)', [username, timestamp, int(hr), float(gsr), state])
-	g.db.commit()
-	end_db_request()
-
-def process_get(userid):
-	start_db_request()
-	cur = g.db.execute('select userid, timestamp, hr, gsr, state, level from entries where userid=?', (userid,))
-	entries = [dict(username=row[0], timestamp=row[1], hr=row[2], gsr=row[3], state=row[4], level=row[5])for row in cur.fetchall()]
-	end_db_request()
-	return json.dumps([dict(item) for item in entries])
-
 if __name__ == "__main__":
-	app.run(host='159.203.31.236', debug=True)
-	init_db()
+	app.run(host='localhost', debug=True)
 
