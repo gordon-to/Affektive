@@ -52,8 +52,7 @@ def measruements_batch():
 		db.session.commit()
 		return jsonify(success=str(len(json['measurements'])) + " entries inserted.")
 	except Exception, e:
-
-		return jsonify(error=str(e), )
+		return jsonify(error=str(e)), 500
 
 
 
