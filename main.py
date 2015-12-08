@@ -55,7 +55,6 @@ def measruements_batch():
 		json = request.get_json()
 		userid = json['username']
 		for entry in json['measurements']:
-			print entry
 			measurement = Measurement(
 			 	int(userid), 
 			 	datetime.fromtimestamp(entry['timestamp']),
@@ -63,7 +62,7 @@ def measruements_batch():
 			 	float(entry['gsr']),
 				entry['state'],
 				float(entry['level']))
-			db.session.add(entry)
+			db.session.add(measurement)
 		db.session.commit()
 		return jsonify(success=str(len(json['measurements'])) + " entries inserted.")
 	except Exception, e:
