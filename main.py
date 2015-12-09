@@ -30,7 +30,7 @@ app = create_app()
 def create_api(app):
 	with app.app_context():
 		manager = flask.ext.restless.APIManager(app, flask_sqlalchemy_db=db)
-		manager.create_api(Measurement, methods=['GET', 'POST', 'DELETE'])
+		manager.create_api(Measurement, methods=['GET', 'PATCH' 'POST', 'DELETE'], res)
 create_api(app)
 
 
